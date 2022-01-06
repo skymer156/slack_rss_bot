@@ -133,3 +133,9 @@ __blobstorage__
 __queuestorage__
 __azurite_db*__.json
 .python_packages
+test3.py
+test.py
+test2.py
+json2file.py
+.gitignore
+参考にするblock.json

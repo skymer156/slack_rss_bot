@@ -1,5 +1,7 @@
 # RSSを用いたSlack Botアプリケーション
 
+テストではfabcrossのrssを使わさせていただいています。
+
 ## 使用している技術
 
 * Python3.9
@@ -17,6 +19,7 @@
 * slack_sdk
 * json(予定)
 * google cloud API(予定)
+* typing, Namedtuple
 
 tools
 
