@@ -9,6 +9,7 @@
 * Slack API
 * RSS2.0
 
+ブランチ構成はmain/develop/feature
 ## 使用Pythonパッケージ
 
 * datetime
