@@ -3,16 +3,19 @@ import time
 import feedparser
 import logging  # loggerにしたい。
 import os
-import json
-from typing import NamedTuple
+import configparser
+
 
 import azure.functions as func
 
+from typing import NamedTuple
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 slack_token = os.environ["SLACK_BOT_TOKEN"]
 client = WebClient(slack_token)
+inifile = configparser.ConfigParser()
+inifile.read("RssRetrieverBot/config.ini")
 
 
 class Article(NamedTuple):
@@ -21,6 +24,32 @@ class Article(NamedTuple):
     title: str
     summary: str
     updated: time.struct_time
+
+    def as_chaanel_block(self):
+        text = f"{self.article_id} <{self.url}|記事リンク> {self.title}"
+        return_dict = {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": text
+                }
+                    ]
+            }
+        return return_dict
+
+    def as_thread_block(self):
+        text = f"{self.article_id} <{self.url}|記事リンク> {self.summary}"
+        return_dict = {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": text
+                }
+                    ]
+            }
+        return return_dict
 
 
 def get_article_list_from_rss(rss_path: str) -> list[Article]:
@@ -41,14 +70,12 @@ def get_zipped_article_from_entries(entries: list):
     list_titles: list[str] = list(map(lambda e: e['title'], entries))
     list_urls: list[str] = list(map(lambda e: e['link'], entries))
     list_summaries: list[str] = list(map(lambda e: e['summary'], entries))
-    list_updated: list[time.struct_time] = list(map(lambda e: e['updated_parsed'], entries))
+    list_updated: list[time.struct_time] = list(
+        map(lambda e: e['updated_parsed'], entries))
     list_ids: list[int] = [i + 1 for i in range(len(list_titles))]
-    articles_zipped = zip(list_ids, list_urls, list_titles, list_summaries, list_updated)
+    articles_zipped = zip(list_ids, list_urls, list_titles,
+                          list_summaries, list_updated)
     return articles_zipped
-
-
-def generate_section_block(text: str) -> dict:
-    return {"type": "context","elements": [{"type": "plain_text", "text": text}]}
 
 
 def main(mytimer: func.TimerRequest) -> None:
@@ -58,24 +85,30 @@ def main(mytimer: func.TimerRequest) -> None:
     if mytimer.past_due:
         logging.info('The timer is past due!')
 
-    fabcross_rss2 = feedparser.parse('https://fabcross.jp/rss.xml')
-    entries = fabcross_rss2['entries']
-    list_titles = list(map(lambda e: e['title'], entries))
-    list_dicts = list(
-        map(lambda e: {'url': e['link'], 'title': e['summary']}, entries))
+    # rssのxmlから、Articleオブジェクトのリストを作成する。
+    article_list = get_article_list_from_rss(inifile["DEFAULT"]["rsspath"])
+    # channel用のblocksを作成する。blocksはslackの表示フォーマットに従う。
+    channel_block_list = list(
+        map(lambda article: article.as_chaanel_block(), article_list))
+    # thread用のblocksを作成する。blocksはslackの表示フォーマットに従う。
+    thread_block_list = list(
+        map(lambda article: article.as_thread_block(), article_list)
+    )
 
     logging.info('Python timer trigger function ran at %s', utc_timestamp)
     try:
-        blocks = [generate_section_block(txt) for txt in list_titles]
+        # slackの任意のチャンネルにメッセージをPOSTする。
         response = client.chat_postMessage(
             channel=os.environ["channel_id"],
             text="rss bot titles",
-            blocks=blocks
+            blocks=channel_block_list
         )
+        # 送信したメッセージにスレッドを作る形でメッセージをPOSTする。
         client.chat_postMessage(
             channel=os.environ["channel_id"],
-            text=str(list_dicts),
-            thread_ts=response['message']['ts']
+            text="rss bot summaries",
+            thread_ts=response['message']['ts'],
+            blocks=thread_block_list
         )
 
         logging.info('Slack Messaging API response is %s', str(response))
