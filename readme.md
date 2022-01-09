@@ -1,6 +1,7 @@
 # RSSを用いたSlack Botアプリケーション
 
 [fabcross様のrss](https://fabcross.jp/rss.xml)を使わさせていただいています。
+Slack用RSSツールはいっぱいあるが、Azureの勉強もかねて作ろうと思った。
 
 ## 使用上の注意
 
@@ -55,3 +56,15 @@ tools
 * Google Spread Sheetではなく、Azure Storageを使用したい。
 * typingの追加 -> 関数には記載。
 * 今後追加予定のメソッド、クラスにテストコードの付与
+
+## メモ
+
+Azure portal上でTimerのタイミングが変えられずビビったが、一応時間の確認自体は関数→統合→Triggerで見られるっぽい。申し訳ないですfabcrossさん...
+
+## 参考
+
+[Markdown記法 チートシート](https://qiita.com/Qiita/items/c686397e4a0f4f11683d)
+[Python Slack SDK WebClient](https://slack.dev/python-slack-sdk/web/index.html)
+[namedtupleで美しいpythonを書く](https://qiita.com/Seny/items/add4d03876f505442136)
+[VisualStudiocodeとPythonを使用してAzureに関数を作成する](https://docs.microsoft.com/ja-jp/azure/azure-functions/create-first-function-vs-code-python)
+
